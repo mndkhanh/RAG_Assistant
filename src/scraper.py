@@ -75,8 +75,11 @@ def fetch_articles(base_url: str, locale: str, limit: int) -> list[Article]:
             if len(articles) >= limit:
                 break
 
-        next_url = payload.get("next_page")
-        next_params = None  # next_page is already a full URL with query params
+        # Zendesk uses cursor pagination here: the next page's full URL
+        # (with an opaque page[after] cursor) lives at links.next, not a
+        # top-level "next_page" field like some older Zendesk endpoints.
+        next_url = payload.get("links", {}).get("next") if payload.get("meta", {}).get("has_more") else None
+        next_params = None  # links.next already has all query params baked in
 
     logger.info("Fetched %d articles from %s", len(articles), base_url)
     return articles

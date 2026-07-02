@@ -94,6 +94,18 @@ Prompt: "How do I add a YouTube video?"
 
 **[screenshot — fill in]**
 
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest -v
+```
+
+Covers Markdown conversion (headings/links/code blocks/citation line) and
+Zendesk scraping (cursor pagination, draft filtering, rate-limit retry) —
+all HTTP calls are mocked, no network or API key required. More test
+coverage lands alongside the vector-store/daily-job pieces.
+
 ## Environment variables
 
 See `.env.sample` for the full list (Zendesk source, article limit,
