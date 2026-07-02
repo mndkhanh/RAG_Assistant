@@ -33,8 +33,17 @@ tokens, so most short articles end up as 1-2 chunks, and longer ones get
 generous overlap so an answer near a chunk boundary still has context on
 both sides. A heading-aware splitter (breaking at `##`/`###` first) would
 give slightly cleaner citation boundaries, but wasn't worth the added
-complexity for a 30-article KB — worth revisiting if citations start
+complexity for a 50-article KB — worth revisiting if citations start
 pointing to bad splits.
+
+OpenAI's Vector Store API doesn't expose the actual per-file chunk count
+(the `files.content()` endpoint returns the whole file as one blob, not
+the indexed chunks), so `src/vector_store.py` estimates it client-side
+with `tiktoken` using the same 800/400 sliding-window math.
+
+**Latest run:** 50/50 articles uploaded to vector store
+`vs_6a46aed3b7808191ac6c3304af6c60a0`, ~144 estimated chunks total
+(added=50, updated=0, skipped=0, removed=0).
 
 ## Setup
 

@@ -11,7 +11,9 @@ tradeoffs vs. a heading-aware splitter.
 from __future__ import annotations
 
 import logging
+import math
 
+import tiktoken
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,25 @@ CHUNKING_STRATEGY = {
     "type": "static",
     "static": {"max_chunk_size_tokens": 800, "chunk_overlap_tokens": 400},
 }
+
+_ENCODING = tiktoken.get_encoding("cl100k_base")
+
+
+def estimate_chunk_count(text: str) -> int:
+    """Estimate how many chunks OpenAI's static strategy will produce.
+
+    OpenAI's vector-store API doesn't expose the real per-file chunk count
+    (client.vector_stores.files.content() returns the whole file as one
+    item, not the indexed chunks), so we estimate client-side from the
+    same token count + sliding-window math OpenAI's static strategy uses.
+    """
+    max_tokens = CHUNKING_STRATEGY["static"]["max_chunk_size_tokens"]
+    overlap = CHUNKING_STRATEGY["static"]["chunk_overlap_tokens"]
+    num_tokens = len(_ENCODING.encode(text))
+    if num_tokens <= max_tokens:
+        return 1
+    stride = max_tokens - overlap
+    return 1 + math.ceil((num_tokens - max_tokens) / stride)
 
 
 def get_or_create_vector_store(client: OpenAI, vector_store_id: str | None, name: str) -> str:
@@ -35,8 +56,7 @@ def get_or_create_vector_store(client: OpenAI, vector_store_id: str | None, name
 def upload_article(client: OpenAI, vector_store_id: str, slug: str, markdown: str) -> tuple[str, int]:
     """Upload one article's Markdown as a new file attached to the vector store.
 
-    Returns (file_id, chunk_count). chunk_count is best-effort: it's only
-    available after OpenAI finishes chunking, via the file-content endpoint.
+    Returns (file_id, estimated_chunk_count) — see estimate_chunk_count().
     """
     file_obj = client.files.create(
         file=(f"{slug}.md", markdown.encode("utf-8")),
@@ -52,17 +72,7 @@ def upload_article(client: OpenAI, vector_store_id: str, slug: str, markdown: st
     if vector_store_file.status != "completed":
         raise RuntimeError(f"Vector store failed to process {slug}: {vector_store_file.status}")
 
-    chunk_count = _count_chunks(client, vector_store_id, file_obj.id)
-    return file_obj.id, chunk_count
-
-
-def _count_chunks(client: OpenAI, vector_store_id: str, file_id: str) -> int:
-    try:
-        content = client.vector_stores.files.content(vector_store_id=vector_store_id, file_id=file_id)
-        return len(content.data)
-    except Exception:  # pragma: no cover - best-effort logging only
-        logger.debug("Chunk count unavailable for file %s", file_id, exc_info=True)
-        return -1
+    return file_obj.id, estimate_chunk_count(markdown)
 
 
 def remove_article(client: OpenAI, vector_store_id: str, file_id: str) -> None:

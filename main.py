@@ -58,9 +58,13 @@ def run() -> None:
     state = load_state(state_file)
     diff = compute_diff(slug_to_markdown, state)
 
-    vector_store_id = get_or_create_vector_store(client, state.get("vector_store_id"), vector_store_name)
+    # Explicit env var wins (useful for stateless deploys without a
+    # persistent volume); otherwise fall back to what the last run saved.
+    existing_vector_store_id = os.environ.get("VECTOR_STORE_ID") or state.get("vector_store_id")
+    vector_store_id = get_or_create_vector_store(client, existing_vector_store_id, vector_store_name)
     state["vector_store_id"] = vector_store_id
     state.setdefault("articles", {})
+    save_state(state_file, state)
 
     total_chunks = 0
 
@@ -78,13 +82,16 @@ def run() -> None:
             "updated_at": slug_to_article[slug].updated_at,
             "file_id": file_id,
         }
+        # Persist after every file, not just at the end — if a later file
+        # hangs or the job crashes, a retry shouldn't re-upload (and
+        # duplicate) articles that already succeeded.
+        save_state(state_file, state)
 
     for slug in diff.removed:
         old_file_id = state["articles"][slug]["file_id"]
         remove_article(client, vector_store_id, old_file_id)
         del state["articles"][slug]
-
-    save_state(state_file, state)
+        save_state(state_file, state)
 
     logger.info(
         "Run complete. vector_store=%s added=%d updated=%d skipped=%d removed=%d chunks_embedded=%d",
