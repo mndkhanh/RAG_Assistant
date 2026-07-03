@@ -1,0 +1,42 @@
+.optibot * {
+  box-sizing: border-box;
+}
+
+.optibot-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.optibot-scroll::-webkit-scrollbar-thumb {
+  background: #c9e9e1;
+  border-radius: 8px;
+}
+
+@keyframes optibot-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes optibot-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.optibot-fade-up {
+  animation: optibot-fade-up 0.25s ease;
+}
+
+.optibot-blink {
+  animation: optibot-blink 1.2s ease-in-out infinite;
+}
