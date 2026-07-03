@@ -30,6 +30,13 @@ docker run --rm \
   rag-assistant
 ```
 
+## Chunking Strategy
+
+I choose the default chunking strategy of Open AI vector store for some reasons:
+
+- It has 800 token/chunk and 400 token/overlap, it will help to prevent AI LLM to hallucinate about the context. It still has surrounding context in the adjacent chunk.
+- For convenience and simplicity/readability over a heading-aware splitter.
+
 ## Daily job logs & Architecture
 
 ![Architecture](submissions/system-design.jpg)
