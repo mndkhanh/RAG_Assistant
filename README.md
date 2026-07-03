@@ -30,7 +30,9 @@ docker run --rm \
   rag-assistant
 ```
 
-## Daily job logs
+## Daily job logs & Architecture
+
+![Architecture](submissions/system-design.jpg)
 
 https://optibot.mndkhanh.workers.dev/
 
