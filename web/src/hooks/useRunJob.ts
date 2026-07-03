@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { supabase } from '../supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 
 export type RunState = 'idle' | 'running' | 'success' | 'error'
 
-export function useRunJob() {
+export function useRunJob(onStarted?: () => void) {
   const [state, setState] = useState<RunState>('idle')
   const [message, setMessage] = useState('')
 
@@ -23,6 +23,7 @@ export function useRunJob() {
 
     setState('success')
     setMessage(data?.taskArn ?? 'Task started')
+    onStarted?.()
   }
 
   return { state, message, run }

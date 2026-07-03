@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import './optibot.css'
+import './OptiBot.css'
 import { Sidebar } from './Sidebar'
 import { ChatTab } from './ChatTab'
 import { LogsTab } from './LogsTab'
 import { FilesTab } from './FilesTab'
-import type { Tab } from './types'
+import type { Tab } from '../types'
 
 export function OptiBot() {
   const [tab, setTab] = useState<Tab>('chat')

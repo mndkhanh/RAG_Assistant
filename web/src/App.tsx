@@ -1,4 +1,4 @@
-import { OptiBot } from './optibot/OptiBot'
+import { OptiBot } from './components/OptiBot'
 
 function App() {
   return <OptiBot />

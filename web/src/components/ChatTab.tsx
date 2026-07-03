@@ -1,32 +1,20 @@
 import { useState, type KeyboardEvent } from 'react'
-import { INITIAL_MESSAGES, REPLIES } from './data'
-import type { ChatMessage } from './types'
+import { useChat } from '../hooks/useChat'
 
 export function ChatTab() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES)
+  const { messages, isSending, error, sendMessage } = useChat()
   const [draft, setDraft] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
 
-  function sendMessage() {
-    const text = draft.trim()
-    if (!text) return
-
-    const nextId = messages.length + 1
-    setMessages((prev) => [...prev, { id: nextId, role: 'user', text }])
+  function handleSend() {
+    if (!draft.trim() || isSending) return
+    sendMessage(draft)
     setDraft('')
-    setIsTyping(true)
-
-    const reply = REPLIES[nextId % REPLIES.length]
-    setTimeout(() => {
-      setIsTyping(false)
-      setMessages((prev) => [...prev, { id: prev.length + 1, role: 'assistant', text: reply }])
-    }, 900)
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      handleSend()
     }
   }
 
@@ -41,7 +29,7 @@ export function ChatTab() {
       >
         <div style={{ fontSize: 20, fontWeight: 700, color: '#ffffff' }}>AI Chatbot</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>
-          Ask OptiBot to plan, execute, or explain a task
+          Ask OptiBot anything about OptiSigns — answered from the live knowledge base
         </div>
       </div>
 
@@ -87,7 +75,7 @@ export function ChatTab() {
               </div>
             )
           })}
-          {isTyping && (
+          {isSending && (
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div
                 style={{
@@ -102,6 +90,11 @@ export function ChatTab() {
               <div style={{ padding: '12px 16px', borderRadius: 14, background: '#f4fbf9', color: '#5c8a80', fontSize: 14 }}>
                 OptiBot is typing…
               </div>
+            </div>
+          )}
+          {error && (
+            <div style={{ maxWidth: '72%', padding: '12px 16px', borderRadius: 14, background: '#fbeeec', color: '#b85347', fontSize: 13 }}>
+              {error}
             </div>
           )}
         </div>
@@ -130,14 +123,16 @@ export function ChatTab() {
           />
           <button
             type="button"
-            onClick={sendMessage}
+            onClick={handleSend}
+            disabled={isSending}
             style={{
               width: 42,
               height: 42,
               minWidth: 42,
               borderRadius: 12,
               border: 'none',
-              cursor: 'pointer',
+              cursor: isSending ? 'not-allowed' : 'pointer',
+              opacity: isSending ? 0.6 : 1,
               background: 'radial-gradient(circle at 30% 30%, #30ba9e, #01998a)',
               color: '#ffffff',
               fontSize: 16,
