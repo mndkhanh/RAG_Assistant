@@ -1,0 +1,36 @@
+#center {
+  max-width: 480px;
+  margin: 10vh auto 0;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.run-job {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #1a1a1a;
+  color: white;
+  cursor: pointer;
+}
+
+.run-job:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+
+.status-success {
+  color: #2e7d32;
+}
+
+.status-error {
+  color: #c62828;
+}
