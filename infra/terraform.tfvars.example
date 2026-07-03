@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values.
+# Never commit terraform.tfvars — it holds real secrets.
+
+openai_api_key = "sk-..."
+
+# Optional: Supabase Postgres connection string (session pooler).
+# Leave as "" to skip Postgres and let main.py use local JSON state.
+database_url = ""
