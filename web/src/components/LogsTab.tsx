@@ -46,8 +46,12 @@ function formatTime(timestamp: number): string {
 export function LogsTab() {
   const [selectedTaskArn, setSelectedTaskArn] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [articleLimitInput, setArticleLimitInput] = useState('')
   const { runs, loading, error: loadError, refresh } = useJobRuns()
   const { state: runState, message: runMessage, run: runJob } = useRunJob(refresh)
+
+  const parsedArticleLimit = articleLimitInput.trim() ? Number(articleLimitInput) : undefined
+  const triggerRun = () => runJob(parsedArticleLimit)
 
   const selectedRun = runs.find((r) => r.task_arn === selectedTaskArn) ?? runs[0]
   const { events: logEvents, loading: logsLoading, error: logsError } = useJobLogs(
@@ -66,25 +70,45 @@ export function LogsTab() {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-            <button
-              type="button"
-              onClick={runJob}
-              disabled={runState === 'running'}
-              style={{
-                padding: '10px 16px',
-                fontSize: 13.5,
-                fontWeight: 700,
-                borderRadius: 10,
-                border: 'none',
-                cursor: runState === 'running' ? 'not-allowed' : 'pointer',
-                opacity: runState === 'running' ? 0.6 : 1,
-                background: 'radial-gradient(circle at 30% 30%, #30ba9e, #01998a)',
-                color: '#ffffff',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {runState === 'running' ? 'Starting task…' : 'Run job now'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="number"
+                min={1}
+                max={200}
+                value={articleLimitInput}
+                onChange={(e) => setArticleLimitInput(e.target.value)}
+                placeholder="ARTICLE_LIMIT (50)"
+                title="Override ARTICLE_LIMIT for this run only — leave blank to use the deployed default"
+                disabled={runState === 'running'}
+                style={{
+                  width: 130,
+                  padding: '9px 10px',
+                  fontSize: 13,
+                  borderRadius: 10,
+                  border: '1px solid #cfe8e1',
+                  color: '#0f2e29',
+                }}
+              />
+              <button
+                type="button"
+                onClick={triggerRun}
+                disabled={runState === 'running'}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  border: 'none',
+                  cursor: runState === 'running' ? 'not-allowed' : 'pointer',
+                  opacity: runState === 'running' ? 0.6 : 1,
+                  background: 'radial-gradient(circle at 30% 30%, #30ba9e, #01998a)',
+                  color: '#ffffff',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {runState === 'running' ? 'Starting task…' : 'Run job now'}
+              </button>
+            </div>
             {runState === 'success' && (
               <div style={{ fontSize: 12, color: '#01998a', maxWidth: 220, textAlign: 'right', wordBreak: 'break-all' }}>
                 Task started: {runMessage}
@@ -212,7 +236,7 @@ export function LogsTab() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   type="button"
-                  onClick={runJob}
+                  onClick={triggerRun}
                   disabled={runState === 'running'}
                   title="Start a new manual run"
                   style={{

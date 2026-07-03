@@ -16,3 +16,6 @@ infra/*.tfplan
 infra/tfplan
 
 .vscode/
+docs.md
+.claude/
+CLAUDE.md

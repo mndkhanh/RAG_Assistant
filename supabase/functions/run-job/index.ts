@@ -23,8 +23,40 @@ const ecs = new ECSClient({
 // (already embedded in the frontend) can trigger a run. That's a
 // deliberate choice for this demo; it means the button is reachable by
 // anyone who has the site URL, with no per-user attribution or rate limit.
+// Optional testing knob: lets the "Run job now" button override the
+// task definition's default ARTICLE_LIMIT (50) for one run, e.g. to force
+// ADDED/REMOVED transitions (see CLAUDE.md). Bounded so the public,
+// unauthenticated trigger can't be used to request an absurdly large scrape.
+const MIN_ARTICLE_LIMIT = 1;
+const MAX_ARTICLE_LIMIT = 200;
+
+function parseArticleLimit(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < MIN_ARTICLE_LIMIT || n > MAX_ARTICLE_LIMIT) return null;
+  return n;
+}
+
 export default {
-  fetch: withSupabase({ auth: ["publishable"] }, async (_req) => {
+  fetch: withSupabase({ auth: ["publishable"] }, async (req) => {
+    const { articleLimit } = await req.json().catch(() => ({}));
+
+    let parsedLimit: number | null = null;
+    if (articleLimit !== undefined) {
+      parsedLimit = parseArticleLimit(articleLimit);
+      if (parsedLimit === null) {
+        return Response.json(
+          { error: `articleLimit must be an integer between ${MIN_ARTICLE_LIMIT} and ${MAX_ARTICLE_LIMIT}` },
+          { status: 400 },
+        );
+      }
+    }
+
+    const environment = [{ name: "TRIGGERED_BY", value: "manual" }];
+    if (parsedLimit !== null) {
+      environment.push({ name: "ARTICLE_LIMIT", value: String(parsedLimit) });
+    }
+
     const result = await ecs.send(
       new RunTaskCommand({
         cluster,
@@ -41,7 +73,7 @@ export default {
           containerOverrides: [
             {
               name: Deno.env.get("ECS_CONTAINER_NAME") ?? "rag-assistant-job",
-              environment: [{ name: "TRIGGERED_BY", value: "manual" }],
+              environment,
             },
           ],
         },
@@ -69,6 +101,8 @@ export default {
   2. Make an HTTP request:
 
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/run-job' \
-    --header 'apiKey: <publishable key>'
+    --header 'apiKey: <publishable key>' \
+    --header 'Content-Type: application/json' \
+    --data '{"articleLimit": 30}'
 
 */
